@@ -1,0 +1,18 @@
+<resources>
+    <string name="app_name">MovieCraze</string>
+    <string name="action_settings">Settings</string>
+
+    <string name="pref_order_label">Sort Order</string>
+    <string name="pref_order_key" translatable="false">orderSelection</string>
+    <string name="pref_order_popular" translatable="false">popular</string>
+    <string name="pref_order_ratings" translatable="false">top_rated</string>
+    <string name="pref_order_default" translatable="false">popular</string>
+    <string name="pref_order_label_popular">Popular</string>
+    <string name="pref_order_label_ratings">Ratings</string>
+    <string name="title_activity_settings">SettingsActivity</string>
+    <string name="title_movie_detail_activity">Detail Activity</string>
+    
+    <string name="detail_synopsis">Movie Synopsis:</string>
+    <string name="detail_releaseDate">Release date:</string>
+    <string name="detail_userRatings">User ratings:</string>
+</resources>
