@@ -1,10 +1,10 @@
 package com.example.kprabhu.moviecraze;
 
 import android.content.Context;
+import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.BaseAdapter;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
 
@@ -17,25 +17,47 @@ import java.util.ArrayList;
  * Created by kprabhu on 2/6/2017.
  */
 
-public class MovieListAdapter extends BaseAdapter {
+public class MovieListAdapter extends RecyclerView.Adapter<MovieListAdapter.MovieGridViewHolder> {
     private final ArrayList<MovieInfo> mMovieList;
-    private LayoutInflater inflater;
     Context mContext;
+    final private MovieListItemClickListener mOnClickListener;
 
-    public MovieListAdapter(Context context, ArrayList<MovieInfo> movieList) {
-        inflater = LayoutInflater.from(context);
+    public MovieListAdapter(Context context, ArrayList<MovieInfo> movieList, MovieListItemClickListener listener) {
         mContext = context;
         mMovieList = movieList;
+        mOnClickListener = listener;
     }
 
     @Override
-    public int getCount() {
-        return mMovieList.size();
+    public MovieGridViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
+        View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_grid_image,parent,false);
+        return new MovieGridViewHolder(view);
     }
 
     @Override
-    public Object getItem(int position) {
-        return mMovieList.get(position);
+    public void onBindViewHolder(final MovieGridViewHolder holder, int position) {
+        if (holder != null && holder instanceof MovieGridViewHolder) {
+
+            Picasso.with(mContext)
+                .load(mMovieList.get(position).getMoviePosterURL())
+                .placeholder(R.drawable.placeholder_poster)
+                .error(R.mipmap.ic_launcher)
+                .fit()
+                .into(holder.imageView, new Callback() {
+
+                    @Override
+                    public void onSuccess() {
+                        holder.imageView.setVisibility(View.VISIBLE);
+                        holder.progressBar.setVisibility(View.INVISIBLE);
+                    }
+
+                    @Override
+                    public void onError() {
+                        holder.progressBar.setVisibility(View.VISIBLE);
+                        holder.imageView.setVisibility(View.INVISIBLE);
+                    }
+                });
+        }
     }
 
     @Override
@@ -44,42 +66,32 @@ public class MovieListAdapter extends BaseAdapter {
     }
 
     @Override
-    public View getView(int position, View view, ViewGroup viewGroup) {
-        final ViewHolder viewHolder;
-        if (view == null) {
-            view = inflater.inflate(R.layout.item_grid_image, viewGroup, false);
-            viewHolder = new ViewHolder();
-            viewHolder.imageView = (ImageView) view.findViewById(R.id.gridImage);
-            viewHolder.progressBar = (ProgressBar) view.findViewById(R.id.gridImageProgress);
-            view.setTag(viewHolder);
-        } else {
-            viewHolder = (ViewHolder) view.getTag();
-        }
-
-        Picasso.with(mContext)
-                .load(mMovieList.get(position).getMovieImageURL())
-//                    .placeholder(R.drawable.ic_stub)
-//                    .error(R.drawable.ic_launcher)
-                .fit()
-                .into(viewHolder.imageView, new Callback() {
-
-                    @Override
-                    public void onSuccess() {
-                        viewHolder.imageView.setVisibility(View.VISIBLE);
-                        viewHolder.progressBar.setVisibility(View.INVISIBLE);
-                    }
-
-                    @Override
-                    public void onError() {
-                        viewHolder.progressBar.setVisibility(View.VISIBLE);
-                        viewHolder.imageView.setVisibility(View.INVISIBLE);
-                    }
-                });
-        return view;
+    public int getItemCount() {
+        return mMovieList.size();
     }
 
-    static class ViewHolder {
+    class MovieGridViewHolder extends  RecyclerView.ViewHolder implements View.OnClickListener{
         ImageView imageView;
         ProgressBar progressBar;
+
+        public MovieGridViewHolder(View itemView) {
+            super(itemView);
+            imageView= (ImageView) itemView.findViewById(R.id.gridImage);
+            progressBar= (ProgressBar) itemView.findViewById(R.id.gridImageProgress);
+            itemView.setOnClickListener(this);
+        }
+
+
+        @Override
+        public void onClick(View view) {
+            int clickedPosition = getLayoutPosition();
+            mOnClickListener.onMovieListItemClick(clickedPosition);
+        }
     }
+
+    public interface  MovieListItemClickListener{
+        void onMovieListItemClick(int clickedItemPosition);
+    }
+
+
 }

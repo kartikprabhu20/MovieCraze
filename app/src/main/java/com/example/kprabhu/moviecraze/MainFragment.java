@@ -2,6 +2,7 @@ package com.example.kprabhu.moviecraze;
 
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.database.Cursor;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -9,6 +10,8 @@ import android.os.Parcelable;
 import android.preference.PreferenceManager;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
+import android.support.v7.widget.GridLayoutManager;
+import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -19,6 +22,9 @@ import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.GridView;
 import android.widget.Toast;
+
+import com.example.kprabhu.moviecraze.database.MovieUtils;
+import com.example.kprabhu.moviecraze.database.MoviesContract;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -39,35 +45,35 @@ import java.util.ArrayList;
  */
 public class MainFragment extends Fragment {
 
-    GridView gridView;
-
-
+    private RecyclerView gridView;
     private MovieListAdapter mMovieListAdapter;
-    private final ArrayList<MovieInfo> mMovieList = new ArrayList<>();
+    private MovieListAdapter.MovieListItemClickListener clickListener = null;
+    private ArrayList<MovieInfo> mMovieList = new ArrayList<>();
     @Nullable
     @Override
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View rootView = inflater.inflate(R.layout.fragment_main, container, false);
         setHasOptionsMenu(true);
+        setRetainInstance(true);
+        gridView = (RecyclerView) rootView.findViewById(R.id.movieListRecyclerView);
+        GridLayoutManager gridLayoutManager = new GridLayoutManager(getContext(),2);
+        gridView.setLayoutManager(gridLayoutManager);
 
-        gridView = (GridView) rootView.findViewById(R.id.main_grid);
-        mMovieListAdapter = new MovieListAdapter(getContext(),mMovieList);
-        gridView.setAdapter(mMovieListAdapter);
-        gridView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+        clickListener = new MovieListAdapter.MovieListItemClickListener() {
+
             @Override
-            public void onItemClick(AdapterView<?> adapterView, View view, int position, long l) {
+            public void onMovieListItemClick(int clickedItemPosition) {
                 Intent intent = new Intent(getActivity(), MovieDetailActivity.class);
-                intent.putExtra("movie_info", (Parcelable) mMovieListAdapter.getItem(position));
-                startActivity(intent);            }
-        });
+                intent.putExtra("movie_info", mMovieList.get(clickedItemPosition));
+                startActivity(intent);
+            }
+        };
 
+        mMovieListAdapter = new MovieListAdapter(getContext(),mMovieList,clickListener);
+        gridView.setAdapter(mMovieListAdapter);
         return rootView;
     }
 
-    @Override
-    public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
-        inflater.inflate(R.menu.forecastfragmentmenu , menu);
-    }
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         int id = item.getItemId();
@@ -81,10 +87,16 @@ public class MainFragment extends Fragment {
     }
 
     private void updateList() {
-        FetchMoviesTask weatherTask = new FetchMoviesTask();
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getActivity());
         String sortOrder = prefs.getString(getString(R.string.pref_order_key),getString(R.string.pref_order_default));
-        weatherTask.execute(sortOrder);
+
+        if(sortOrder.equalsIgnoreCase(getString(R.string.pref_order_label_favorites))){
+            FetchFavMoviesTask fetchFavMoviesTask = new FetchFavMoviesTask();
+            fetchFavMoviesTask.execute();
+        }else {
+            FetchMoviesTask fetchMoviesTask = new FetchMoviesTask();
+            fetchMoviesTask.execute(sortOrder);
+        }
     }
 
     private class FetchMoviesTask extends AsyncTask<String,Void,ArrayList<MovieInfo>> {
@@ -101,16 +113,9 @@ public class MainFragment extends Fragment {
             // Will contain the raw JSON response as a string.
             String movieCollectionJson = null;
 
-            String BASE_URL = "http://api.themoviedb.org/3/movie/";
-            final String APPID_PARAM = "api_key";
-            final String APPID_VALUE = "get_api_key_from_www.themoviedb.org";
-
             try {
-                Uri builtUri = Uri.parse(BASE_URL).buildUpon()
-                        .appendPath(params[0])
-                        .appendQueryParameter(APPID_PARAM,APPID_VALUE).build();
-                URL url = new URL(builtUri.toString());
-                Log.v("ForecastFragment","Built URI:"+ builtUri.toString());
+                URL url = new URL(MovieUtils.buildUrl(params[0]));
+                Log.v("ForecastFragment","Built URI:"+ MovieUtils.buildUrl(params[0]));
 
                 urlConnection = (HttpURLConnection) url.openConnection();
                 urlConnection.setRequestMethod("GET");
@@ -162,53 +167,58 @@ public class MainFragment extends Fragment {
                 }
             }
 
-
-            return getMovieDataFromJson(movieCollectionJson,params[0]);
-
-            //return null;
+            return MovieUtils.getMovieDataFromJson(movieCollectionJson,params[0]);
         }
 
         @Override
         protected void onPostExecute(ArrayList<MovieInfo> movieInfos) {
-            mMovieListAdapter = new MovieListAdapter(getContext(), movieInfos);
+            mMovieListAdapter = new MovieListAdapter(getContext(), movieInfos,clickListener);
             gridView.setAdapter(mMovieListAdapter);
+            mMovieListAdapter.notifyDataSetChanged();
+            mMovieList=movieInfos;
         }
 
-        private ArrayList<MovieInfo> getMovieDataFromJson(String movieCollection, String param) {
-            ArrayList<MovieInfo> movieList = new ArrayList<>();
-            try {
-                String IMAGE_BASE_URL = "http://image.tmdb.org/t/p/";
-                JSONObject jsonObject = new JSONObject(movieCollection);
-                JSONArray jsonArray = jsonObject.getJSONArray("results");
 
-                if(jsonArray!=null){
-                for (int i = 0; i < jsonArray.length(); i++) {
-                    JSONObject object = jsonArray.getJSONObject(i);
+    }
 
-                    int movieId = object.getInt("id");
-                    String moviePosterImgUrl = object.getString("poster_path");
-                    String movieBackdropImgUr = object.getString("backdrop_path");
-                    String movieTitle = object.getString("original_title");
-                    String movieSynopsis = object.getString("overview");
-                    String movieReleaseDate = object.getString("release_date");
-                    double movieVoteAvg = object.getDouble("vote_average");
-                    double moviePopularity = object.getDouble("popularity");
 
-                    moviePosterImgUrl = IMAGE_BASE_URL + "w342" + moviePosterImgUrl;
+    private class FetchFavMoviesTask extends AsyncTask<String,Void,ArrayList<MovieInfo>> {
 
-                    if (!movieBackdropImgUr.equals("null")) {
-                        movieBackdropImgUr = IMAGE_BASE_URL + "w500" + movieBackdropImgUr;
-                    }
+        @Override
+        protected ArrayList<MovieInfo> doInBackground(String... strings) {
+            mMovieList.clear();
+            Cursor movieCursor = MovieCrazeApplication.getAppContext().getContentResolver().query(MoviesContract.MovieEntry.CONTENT_URI, null, null, null, null);
+            if (movieCursor != null && movieCursor.moveToFirst()) {
+                do {
+                    int movieId = movieCursor.getInt(MoviesContract.MovieEntry.PROJECTION_MOVIE_ID);
+                    String moviePosterImgUrl = movieCursor.getString(MoviesContract.MovieEntry.PROJECTION_MOVIE_POSTER);
+                    String movieBackdropImgUr = movieCursor.getString(MoviesContract.MovieEntry.PROJECTION_MOVIE_BACKDROP_URI);
+                    String movieTitle = movieCursor.getString(MoviesContract.MovieEntry.PROJECTION_MOVIE_TITLE);
+                    String movieSynopsis = movieCursor.getString(MoviesContract.MovieEntry.PROJECTION_MOVIE_SYNOPSIS);
+                    String movieReleaseDate = movieCursor.getString(MoviesContract.MovieEntry.PROJECTION_MOVIE_RELEASE_DATE);
+                    double movieVoteAvg = movieCursor.getDouble(MoviesContract.MovieEntry.PROJECTION_MOVIE_VOTE_AVERAGE);
+                    String movieTrailers = movieCursor.getString(MoviesContract.MovieEntry.PROJECTION_MOVIE_TRAILERS);
+                    String movieReviews = movieCursor.getString(MoviesContract.MovieEntry.PROJECTION_MOVIE_REVIEWS);
 
                     MovieInfo info = new MovieInfo(movieId, movieTitle, moviePosterImgUrl, movieBackdropImgUr,
-                            movieSynopsis, movieReleaseDate, movieVoteAvg, moviePopularity);
+                            movieSynopsis, movieReleaseDate, movieVoteAvg, 0,
+                            0, movieTrailers, movieReviews);
 
-                    movieList.add(info);
-                }}
-            } catch (JSONException e) {
-                e.printStackTrace();
+                    mMovieList.add(info);
+                } while (movieCursor.moveToNext());
+
             }
-            return movieList;
+            if (movieCursor != null) {
+                movieCursor.close();
+            }
+            return mMovieList;
+        }
+
+        @Override
+        protected void onPostExecute(ArrayList<MovieInfo> movieInfos) {
+            mMovieListAdapter = new MovieListAdapter(getActivity(), movieInfos,clickListener);
+            gridView.setAdapter(mMovieListAdapter);
+            mMovieListAdapter.notifyDataSetChanged();
         }
     }
 }

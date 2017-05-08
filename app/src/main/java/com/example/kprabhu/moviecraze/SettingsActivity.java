@@ -1,6 +1,7 @@
 package com.example.kprabhu.moviecraze;
 
 import android.app.Fragment;
+import android.content.Intent;
 import android.os.Bundle;
 import android.preference.ListPreference;
 import android.preference.Preference;
@@ -52,6 +53,8 @@ public class SettingsActivity extends PreferenceActivity {
                 }
             }else{
                 preference.setSummary(stringValue);
+                Intent intent = new Intent(MovieCrazeApplication.getAppContext(), MainActivity.class);
+                startActivity(intent);
             }
             return true;
         }

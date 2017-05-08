@@ -1,5 +1,6 @@
 package com.example.kprabhu.moviecraze;
 
+import android.app.Service;
 import android.os.Parcel;
 import android.os.Parcelable;
 
@@ -16,8 +17,13 @@ public class MovieInfo implements Parcelable {
     private String movieReleaseDate;
     private double movieVoteAvg;
     private double moviePopularity;
+    private int movieVoteCount;
+    private String movieTrailers;
+    private String movieReviews;
 
-    public MovieInfo(int movieId, String movieTitle, String moviePosterImgUrl, String movieBackdropImgUr, String movieSynopsis, String movieReleaseDate, double movieVoteAvg, double moviePopularity) {
+
+    public MovieInfo(int movieId, String movieTitle, String moviePosterImgUrl, String movieBackdropImgUrl, String movieSynopsis, String movieReleaseDate, double movieVoteAvg, double moviePopularity,
+                     int movieVoteCount, String movieTrailers, String movieReviews) {
         this.movieId = movieId;
         this.movieTitle = movieTitle;
         this.moviePosterImgUrl = moviePosterImgUrl;
@@ -26,6 +32,10 @@ public class MovieInfo implements Parcelable {
         this.movieReleaseDate = movieReleaseDate;
         this.movieVoteAvg = movieVoteAvg;
         this.moviePopularity = moviePopularity;
+        this.movieVoteCount = movieVoteCount;
+        this.movieTrailers = movieTrailers;
+        this.movieReviews = movieReviews;
+
     }
 
     protected MovieInfo(Parcel in) {
@@ -37,6 +47,9 @@ public class MovieInfo implements Parcelable {
         movieReleaseDate = in.readString();
         movieVoteAvg = in.readDouble();
         moviePopularity = in.readDouble();
+        movieVoteCount = in.readInt();
+        movieTrailers = in.readString();
+        movieReviews = in.readString();
     }
 
     public static final Creator<MovieInfo> CREATOR = new Creator<MovieInfo>() {
@@ -66,11 +79,16 @@ public class MovieInfo implements Parcelable {
         parcel.writeString(movieReleaseDate);
         parcel.writeDouble(movieVoteAvg);
         parcel.writeDouble(moviePopularity);
+        parcel.writeInt(movieVoteCount);
+        parcel.writeString(movieTrailers);
+        parcel.writeString(movieReviews);
     }
 
-    public String getMovieImageURL() {
+    public String getMoviePosterURL() {
         return moviePosterImgUrl;
     }
+
+    public String getMovieBackdropImgUrl(){return movieBackdropImgUrl;}
 
     public String getMovieTitle() {
         return movieTitle;
@@ -88,4 +106,11 @@ public class MovieInfo implements Parcelable {
         return movieVoteAvg;
     }
 
+    public int getMovieVoteCount(){ return movieVoteCount;}
+
+    public String getMovieTrailers(){ return movieTrailers;}
+
+    public String getMovieReviews(){return movieReviews;}
+
+    public int getMovieID() {return movieId;}
 }

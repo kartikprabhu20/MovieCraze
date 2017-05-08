@@ -4,11 +4,15 @@
 
     <string name="pref_order_label">Sort Order</string>
     <string name="pref_order_key" translatable="false">orderSelection</string>
+
     <string name="pref_order_popular" translatable="false">popular</string>
     <string name="pref_order_ratings" translatable="false">top_rated</string>
+    <string name="pref_order_favorites" translatable="false">favorites</string>
     <string name="pref_order_default" translatable="false">popular</string>
     <string name="pref_order_label_popular">Popular</string>
     <string name="pref_order_label_ratings">Ratings</string>
+    <string name="pref_order_label_favorites">Favorites</string>
+
     <string name="title_activity_settings">SettingsActivity</string>
     <string name="title_movie_detail_activity">Detail Activity</string>
     

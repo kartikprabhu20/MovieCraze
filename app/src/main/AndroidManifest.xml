@@ -4,6 +4,7 @@
 
     <uses-permission android:name="android.permission.INTERNET"/>
     <application
+        android:name=".MovieCrazeApplication"
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
@@ -28,11 +29,22 @@
         <activity android:name=".MovieDetailActivity"
             android:label="@string/title_movie_detail_activity"
             android:parentActivityName=".MainActivity"
+            android:theme="@style/AppTheme.NoActionBar"
             >
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value="com.example.kprabhu.moviecraze.MainActivity" />
         </activity>
+
+        <provider
+            android:name=".database.MovieProvider"
+            android:authorities="com.example.kprabhu.moviecraze.android"
+            android:enabled="true"
+            android:exported="true"/>
+
+        <meta-data
+            android:name="api_key"
+            android:value="get from themobiledb" />
     </application>
 
 </manifest>
